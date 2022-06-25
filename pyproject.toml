@@ -1,0 +1,37 @@
+[tool.poetry]
+name = "catanpg"
+version = "0.0.1"
+description = "A procedural generator of Catan boards written in Python."
+authors = ["Miguel Neves <miguel.a.t.neves@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.7.1,<4.0"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.4"
+mypy = "^0.910"
+flake8 = "^3.9.2"
+isort = "^5.9.3"
+flake8-docstrings = "^1.6.0"
+black = "^21.8b0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+python_version = "3.6"
+disallow_untyped_defs = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+exclude = ".venv"
+namespace_packages = true
+explicit_package_bases = true
