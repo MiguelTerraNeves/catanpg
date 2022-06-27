@@ -1,0 +1,1 @@
+"""Base Catan board generation functionality (no expansions)."""

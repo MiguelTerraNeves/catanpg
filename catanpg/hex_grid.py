@@ -89,7 +89,7 @@ class HexGrid:
 
     def __init__(self, radius: int):
         self._radius = radius
-        self._grid = [[None for i in range(radius*2 + 1)] for i in range(radius*2 + 1)]
+        self._grid = [[None for _ in range(radius*2 + 1)] for _ in range(radius*2 + 1)]
 
     @property
     def radius(self) -> int:
@@ -123,7 +123,7 @@ class HexGrid:
 
     def spiral_ordered_hexes(self, start_corner: Direction, radius: Optional[int] = None) -> Iterator[Any]:
         if radius is not None and radius > self.radius:
-            raise ValueError(f"Radius cannot be larger than {self.radius} (got {radius}) instead)")
+            raise ValueError(f"Radius cannot be larger than {self.radius} (got {radius} instead)")
         for x, y in spiral_ordered_indexes(start_corner, radius if radius is not None else self.radius):
             yield self.get(x, y)
 
