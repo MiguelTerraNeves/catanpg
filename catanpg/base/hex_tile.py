@@ -2,7 +2,7 @@
 from abc import ABC
 from typing import Any
 
-from hex_grid import Direction, rotate_direction
+from catanpg.hex_grid import Direction, rotate_direction
 
 # TODO(mtn): docstrings
 

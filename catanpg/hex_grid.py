@@ -1,4 +1,5 @@
 """Hexagonal grid data structure and utilities."""
+import itertools as it
 import operator
 from enum import IntEnum
 from typing import Any, Iterator, Optional, Tuple, cast
@@ -84,12 +85,13 @@ def neighbors(x: int, y: int) -> Iterator[Tuple[int, int]]:
         yield step_from_hex(x, y, direction)
 
 
-# TODO(mtn): parameterizable typing instead of Any
+# TODO: parameterizable typing instead of Any
+# TODO: rectangular hex grids instead of just circular
 class HexGrid:
 
     def __init__(self, radius: int):
         self._radius = radius
-        self._grid = [[None for _ in range(radius*2 + 1)] for _ in range(radius*2 + 1)]
+        self._grid = list(it.repeat(list(it.repeat(None, radius*2 + 1)), radius*2 + 1))
 
     @property
     def radius(self) -> int:
