@@ -17,6 +17,11 @@ class Direction(IntEnum):
 
 
 _DIRECTION_TO_VECTOR = [(1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)]
+_DIRECTION_TO_ANGLE = [0, 300, 240, 180, 120, 60]
+
+
+def direction_to_angle(direction: Direction) -> float:
+    return _DIRECTION_TO_ANGLE[direction]
 
 
 def move_from_hex(x: int, y: int, direction: Direction, nsteps: int) -> Tuple[int, int]:

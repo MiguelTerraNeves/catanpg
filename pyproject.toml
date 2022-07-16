@@ -5,11 +5,12 @@ description = "A procedural generator of Catan boards written in Python."
 authors = ["Miguel Neves <miguel.a.t.neves@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<4.0"
+python = ">=3.10,<4.0"
+Pillow = "^9.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.4"
-mypy = "^0.910"
+mypy = "^0.961"
 flake8 = "^3.9.2"
 isort = "^5.9.3"
 flake8-docstrings = "^1.6.0"
@@ -35,3 +36,7 @@ warn_unused_ignores = true
 exclude = ".venv"
 namespace_packages = true
 explicit_package_bases = true
+
+[[tool.mypy.overrides]] 
+module = ["PIL.*"]
+ignore_missing_imports = true
