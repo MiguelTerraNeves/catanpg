@@ -7,7 +7,11 @@ from catanpg.base.hex_tile import NumberedHexTile, SeaTile
 LAKE_NUMBERS = (11, 12, 2, 3)
 
 
-class SeaFishTile(SeaTile, NumberedHexTile, ABC):
+class FishTile(NumberedHexTile, ABC):
+    pass
+
+
+class SeaFishTile(SeaTile, FishTile, ABC):
     pass
 
 
@@ -50,7 +54,7 @@ class Sea10FishTile(SeaFishTile):
 SEA_FISH_TILE_CLSS = (Sea4FishTile, Sea5FishTile, Sea6FishTile, Sea8FishTile, Sea9FishTile, Sea10FishTile)
 
 
-class LakeTile(NumberedHexTile):
+class LakeTile(FishTile):
 
     def __init__(self, *args: Any, **kwargs: Any):
         super().__init__(LAKE_NUMBERS, *args, **kwargs)

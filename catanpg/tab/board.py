@@ -33,6 +33,7 @@ class FishermenOfCatanBoard(BaseBoard):
         return single_harbor_borders, double_harbor_borders
 
     def _shuffle_tiles(self, ordered_numbers: bool) -> None:
+        # Lake cannot be placed next to the sea borders
         lake_pos = random.choice(list(it.chain(list(Direction), [None])))
         lake_x, lake_y = corner_at_distance(lake_pos, 1) if lake_pos else (0, 0)
         self.grid.set(lake_x, lake_y, LakeTile())

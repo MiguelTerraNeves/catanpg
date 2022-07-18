@@ -170,8 +170,8 @@ class BaseBoard:
                 tile_swap = self.grid.get(*idx_swap)
                 if isinstance(tile_swap, NumberedHexTile):
                     new_grid = deepcopy(self.grid)
-                    new_grid.set(*idx_repair, tile_repair.__class__(tile_swap.number))
-                    new_grid.set(*idx_swap, tile_swap.__class__(tile_repair.number))
+                    new_grid.set(*idx_repair, tile_swap.__class__(tile_swap.number))
+                    new_grid.set(*idx_swap, tile_repair.__class__(tile_repair.number))
                     swapped_grids.append(new_grid)
             grid_viols = list(map(self._grid_violation, swapped_grids))
             min_viol = min(grid_viols)
