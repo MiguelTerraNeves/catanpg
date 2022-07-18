@@ -1,4 +1,5 @@
 import itertools as it
+import logging
 import random
 from copy import deepcopy
 from typing import List, Sequence, Tuple, Type
@@ -53,13 +54,14 @@ def _tile_violation(grid: HexGrid, x: int, y: int) -> int:
     return sum(
         1
         for constraint in _FORBIDDEN_NUMBER_ADJACENCIES
+        if tile.number in constraint
         for near_tile in grid.neighbors(x, y)
         if isinstance(near_tile, NumberedHexTile) and near_tile.number in constraint
     )
 
 
 def _grid_violation(grid: HexGrid) -> int:
-    return sum(_tile_violation(grid, *idx) for idx in spiral_ordered_indexes(Direction.EAST, 2))
+    return sum(_tile_violation(grid, x, y) for x, y in spiral_ordered_indexes(Direction.EAST, 2))
 
 
 def _roulette_wheel_selection(weights: Sequence[int]) -> int:
@@ -75,7 +77,7 @@ def _roulette_wheel_selection(weights: Sequence[int]) -> int:
 
 def _select_violating_index(grid: HexGrid) -> Tuple[int, int]:
     indexes = list(spiral_ordered_indexes(Direction.EAST, 2))
-    return indexes[_roulette_wheel_selection([_tile_violation(grid, *idx) for idx in indexes])]
+    return indexes[_roulette_wheel_selection([_tile_violation(grid, x, y) for x, y in indexes])]
 
 
 def _mk_single_harbor_border(harbor_class: Type[HarborTile]) -> SeaBorderTile:
@@ -141,6 +143,7 @@ class BaseBoard:
             self.grid.set(*idx, tile)
 
     def _fix_violations(self) -> bool:
+        logging.info(f":initial-violation {_grid_violation(self.grid)}")
         fix_iter = 0
         while _grid_violation(self.grid) > 0 and fix_iter < _RESTART_THRESHOLD:
             idx_repair = _select_violating_index(self.grid)
@@ -159,4 +162,5 @@ class BaseBoard:
             min_viol_grids = [grid for grid, viol in zip(swapped_grids, grid_viols) if viol == min_viol]
             self.grid = random.choice(min_viol_grids)
             fix_iter += 1
+            logging.info(f":fix-iteration {fix_iter} :new-violation {min_viol}")
         return fix_iter < _RESTART_THRESHOLD

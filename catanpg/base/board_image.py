@@ -43,7 +43,7 @@ def _pixel_at_distance(x: int, y: int, distance: float, angle_degrees: float) ->
 
 
 def _axial_to_pixel(x: int, y: int, radius: int) -> Tuple[int, int]:
-    return 50 + 100*radius + 36*y + 72*x, 100*(2*radius+1) - 50 + 100*radius - 62*y
+    return 50 + 100*radius + 36*y + 72*x, 100*(2*radius+1) - 50 - 100*radius + 62*y
 
 
 def _draw_text(draw: ImageDraw, center_x: int, center_y: int, text: str, size: int) -> None:

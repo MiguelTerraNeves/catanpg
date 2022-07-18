@@ -96,7 +96,9 @@ class HexGrid:
 
     def __init__(self, radius: int):
         self._radius = radius
-        self._grid = list(it.repeat(list(it.repeat(None, radius*2 + 1)), radius*2 + 1))
+        self._grid = []
+        for _ in range(radius*2+1):
+            self._grid.append(list(it.repeat(None, radius*2 + 1)))
 
     @property
     def radius(self) -> int:
