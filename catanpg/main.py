@@ -49,12 +49,19 @@ def parse_arguments() -> argparse.Namespace:
         default=LogLevel.WARNING,
         help=f"Set the log level (default is {LogLevel.WARNING})"
     )
+    parser.add_argument(
+        '--ordered',
+        action='store_true',
+        dest='ordered',
+        default=False,
+        help="Place resource numbers as described in the Catan rulebook instead of randomly."
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_arguments()
     logging.basicConfig(level=args.log_level)
-    board = BaseBoard()
+    board = BaseBoard(ordered_numbers=args.ordered)
     image = BaseBoardImage(board)
     image.show()
