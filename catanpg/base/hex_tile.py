@@ -1,20 +1,18 @@
 """Hexagonal tiles for the base Catan board."""
 from abc import ABC
-from typing import Any
+from typing import Any, Tuple, Union
 
 from catanpg.hex_grid import Direction, rotate_direction
 
 # TODO(mtn): docstrings
+
+NumberOrNumbers = Union[int, Tuple[int, ...]]
 
 
 class HexTile(ABC):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         pass
-
-
-class NullHexTile(HexTile):
-    pass
 
 
 class DesertTile(HexTile):
@@ -27,7 +25,7 @@ class SeaTile(HexTile):
 
 class NumberedHexTile(HexTile, ABC):
 
-    def __init__(self, number: int, *args: Any, **kwargs: Any):
+    def __init__(self, number: NumberOrNumbers, *args: Any, **kwargs: Any):
         super().__init__(*args, **kwargs)
         self.number = number
 

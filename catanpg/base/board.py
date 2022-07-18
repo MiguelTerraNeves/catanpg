@@ -2,7 +2,7 @@ import itertools as it
 import logging
 import random
 from copy import deepcopy
-from typing import List, Sequence, Tuple, Type
+from typing import Dict, List, Optional, Sequence, Set, Tuple, Type
 
 from catanpg.base.hex_tile import (
     BrickHarborTile,
@@ -11,12 +11,15 @@ from catanpg.base.hex_tile import (
     ForestTile,
     GrainHarborTile,
     HarborTile,
+    HexTile,
     HillsTile,
     LumberHarborTile,
     MountainsTile,
     NumberedHexTile,
+    NumberOrNumbers,
     OreHarborTile,
     PastureTile,
+    SeaTile,
     ThreeOneHarborTile,
     WoolHarborTile,
 )
@@ -32,36 +35,9 @@ from catanpg.hex_grid import (
 
 # TODO: docstrings
 
-
-_TILE_QUANTITIES = {
-    ForestTile: 4,
-    PastureTile: 4,
-    FieldsTile: 4,
-    HillsTile: 3,
-    MountainsTile: 3,
-    DesertTile: 1
-}
 _ORDERED_NUMBERS = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11]
 
-_FORBIDDEN_NUMBER_ADJACENCIES = [set((6, 8))]
 _RESTART_THRESHOLD = 10
-
-
-def _tile_violation(grid: HexGrid, x: int, y: int) -> int:
-    tile = grid.get(x, y)
-    if not isinstance(tile, NumberedHexTile):
-        return 0
-    return sum(
-        1
-        for constraint in _FORBIDDEN_NUMBER_ADJACENCIES
-        if tile.number in constraint
-        for near_tile in grid.neighbors(x, y)
-        if isinstance(near_tile, NumberedHexTile) and near_tile.number in constraint
-    )
-
-
-def _grid_violation(grid: HexGrid) -> int:
-    return sum(_tile_violation(grid, x, y) for x, y in spiral_ordered_indexes(Direction.EAST, 2))
 
 
 def _roulette_wheel_selection(weights: Sequence[int]) -> int:
@@ -75,34 +51,22 @@ def _roulette_wheel_selection(weights: Sequence[int]) -> int:
     return idx
 
 
-def _select_violating_index(grid: HexGrid) -> Tuple[int, int]:
-    indexes = list(spiral_ordered_indexes(Direction.EAST, 2))
-    return indexes[_roulette_wheel_selection([_tile_violation(grid, x, y) for x, y in indexes])]
+def _mk_harbor_boder(tile_overrides: Sequence[Optional[SeaTile]] = (None, None, None)) -> SeaBorderTile:
+    if len(tile_overrides) != 3:
+        raise ValueError("The custom tile overrides for a sea border must be a sequence of length 3")
+    border = SeaBorderTile()
+    for i, tile in enumerate(tile_overrides):
+        if tile:
+            border.tiles[i] = tile
+    return border
 
 
 def _mk_single_harbor_border(harbor_class: Type[HarborTile]) -> SeaBorderTile:
-    border = SeaBorderTile()
-    border.tiles[1] = harbor_class(Direction.SOUTHEAST)
-    return border
+    return _mk_harbor_boder((None, harbor_class(Direction.SOUTHEAST), None))
 
 
 def _mk_double_harbor_border(harbor1_class: Type[HarborTile], harbor2_class: Type[HarborTile]) -> SeaBorderTile:
-    border = SeaBorderTile()
-    border.tiles[0] = harbor1_class(Direction.SOUTHEAST)
-    border.tiles[2] = harbor2_class(Direction.SOUTHWEST)
-    return border
-
-
-def _mk_border_tiles() -> Tuple[List[SeaBorderTile], List[SeaBorderTile]]:
-    harbor_class_pairs = (
-        (ThreeOneHarborTile, WoolHarborTile),
-        (ThreeOneHarborTile, BrickHarborTile),
-        (ThreeOneHarborTile, GrainHarborTile)
-    )
-    return (
-        list(map(_mk_single_harbor_border, (LumberHarborTile, ThreeOneHarborTile, OreHarborTile))),
-        list(it.starmap(_mk_double_harbor_border, harbor_class_pairs))
-    )
+    return _mk_harbor_boder((harbor1_class(Direction.SOUTHEAST), None, harbor2_class(Direction.SOUTHWEST)))
 
 
 class BaseBoard:
@@ -115,8 +79,34 @@ class BaseBoard:
             self._shuffle_tiles(ordered_numbers)
             done = self._fix_violations()
 
+    @property
+    def _tile_cls_to_amount(self) -> Dict[Type[HexTile], int]:
+        return {
+            ForestTile: 4,
+            PastureTile: 4,
+            FieldsTile: 4,
+            HillsTile: 3,
+            MountainsTile: 3,
+            DesertTile: 1
+        }
+
+    @property
+    def _forbidden_number_adjacencies(self) -> List[Set[NumberOrNumbers]]:
+        return [set((6, 8))]
+
+    def _mk_border_tiles(self) -> Tuple[List[SeaBorderTile], List[SeaBorderTile]]:
+        harbor_class_pairs = (
+            (ThreeOneHarborTile, WoolHarborTile),
+            (ThreeOneHarborTile, BrickHarborTile),
+            (ThreeOneHarborTile, GrainHarborTile)
+        )
+        return (
+            list(map(_mk_single_harbor_border, (LumberHarborTile, ThreeOneHarborTile, OreHarborTile))),
+            list(it.starmap(_mk_double_harbor_border, harbor_class_pairs))
+        )
+
     def _shuffle_borders(self) -> None:
-        single_harbor_borders, double_harbor_borders = _mk_border_tiles()
+        single_harbor_borders, double_harbor_borders = self._mk_border_tiles()
         assert len(single_harbor_borders) == len(double_harbor_borders)
         random.shuffle(single_harbor_borders)
         random.shuffle(double_harbor_borders)
@@ -133,31 +123,57 @@ class BaseBoard:
         numbers = list(reversed(_ORDERED_NUMBERS))
         if not ordered_numbers:
             random.shuffle(numbers)
-        tile_clss = [tile_cls for tile_cls, amount in _TILE_QUANTITIES.items() for _ in range(amount)]
+        tile_clss = [tile_cls for tile_cls, amount in self._tile_cls_to_amount.items() for _ in range(amount)]
         random.shuffle(tile_clss)
+        for x, y in spiral_ordered_indexes(Direction.EAST, 2):
+            if self.grid.is_free(x, y):
+                tile_cls = tile_clss.pop()
+                tile = tile_cls(numbers.pop()) if issubclass(tile_cls, NumberedHexTile) else tile_cls()
+                self.grid.set(x, y, tile)
+        assert len(numbers) == len(tile_clss) == 0
+
+    def _tile_violation(self, grid: HexGrid, x: int, y: int) -> int:
+        tile = grid.get(x, y)
+        if not isinstance(tile, NumberedHexTile):
+            return 0
+        return sum(
+            1
+            for constraint in self._forbidden_number_adjacencies
+            if tile.number in constraint
+            for near_tile in grid.neighbors(x, y)
+            if isinstance(near_tile, NumberedHexTile) and near_tile.number in constraint
+        )
+
+    def _grid_violation(self, grid: HexGrid) -> int:
+        return sum(self._tile_violation(grid, x, y) for x, y in spiral_ordered_indexes(Direction.EAST, 2))
+
+    def _select_violating_index(self) -> Tuple[int, int]:
         indexes = list(spiral_ordered_indexes(Direction.EAST, 2))
-        assert len(indexes) == len(tile_clss)
-        for idx, tile_cls in zip(indexes, tile_clss):
-            assert self.grid.is_free(*idx)
-            tile = tile_cls(numbers.pop()) if issubclass(tile_cls, NumberedHexTile) else tile_cls()
-            self.grid.set(*idx, tile)
+        return indexes[_roulette_wheel_selection([self._tile_violation(self.grid, x, y) for x, y in indexes])]
+
+    def _is_valid_swap(self, x_repair: int, y_repair: int, x_swap: int, y_swap: int) -> bool:
+        return True
 
     def _fix_violations(self) -> bool:
-        logging.info(f":initial-violation {_grid_violation(self.grid)}")
+        logging.info(f":initial-violation {self._grid_violation(self.grid)}")
         fix_iter = 0
-        while _grid_violation(self.grid) > 0 and fix_iter < _RESTART_THRESHOLD:
-            idx_repair = _select_violating_index(self.grid)
+        while self._grid_violation(self.grid) > 0 and fix_iter < _RESTART_THRESHOLD:
+            idx_repair = self._select_violating_index()
             tile_repair = self.grid.get(*idx_repair)
             assert isinstance(tile_repair, NumberedHexTile)
             swapped_grids = []
-            for idx_swap in filter(lambda idx: idx != idx_repair, spiral_ordered_indexes(Direction.EAST, 2)):
+            valid_swap_it = iter(
+                idx for idx in spiral_ordered_indexes(Direction.EAST, 2)
+                if idx_repair != idx and self._is_valid_swap(*idx_repair, *idx)
+            )
+            for idx_swap in valid_swap_it:
                 tile_swap = self.grid.get(*idx_swap)
                 if isinstance(tile_swap, NumberedHexTile):
                     new_grid = deepcopy(self.grid)
                     new_grid.set(*idx_repair, tile_repair.__class__(tile_swap.number))
                     new_grid.set(*idx_swap, tile_swap.__class__(tile_repair.number))
                     swapped_grids.append(new_grid)
-            grid_viols = list(map(_grid_violation, swapped_grids))
+            grid_viols = list(map(self._grid_violation, swapped_grids))
             min_viol = min(grid_viols)
             min_viol_grids = [grid for grid, viol in zip(swapped_grids, grid_viols) if viol == min_viol]
             self.grid = random.choice(min_viol_grids)
