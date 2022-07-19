@@ -65,7 +65,7 @@ def symmetric_direction(direction: Direction) -> Direction:
     return Direction((direction + 3) % 6)
 
 
-def symmetric_corner(x: int, y: int) -> Tuple[int, int]:
+def symmetric_index(x: int, y: int) -> Tuple[int, int]:
     return -x, -y
 
 
@@ -75,7 +75,7 @@ def ordered_ring_indexes(start_corner: Direction, radius: int) -> Iterator[Tuple
     else:
         x, y = corner_at_distance(start_corner, radius)
         for i in range(6):
-            for j in range(radius):
+            for _ in range(radius):
                 yield x, y
                 x, y = step_from_hex(x, y, Direction((i+2+start_corner) % 6))
 

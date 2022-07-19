@@ -5,10 +5,15 @@ from catanpg.hex_grid import (
     distance,
     index_radius,
     move_from_hex,
+    neighbors,
     next_clockwise_direction,
     next_counter_clockwise_direction,
+    ordered_ring_indexes,
     rotate_direction,
+    spiral_ordered_indexes,
     step_from_hex,
+    symmetric_direction,
+    symmetric_index,
 )
 
 
@@ -80,3 +85,43 @@ def test_next_clockwise_direction() -> None:
 def test_next_counterclockwise_direction() -> None:
     assert next_counter_clockwise_direction(Direction.WEST) == Direction.SOUTHWEST
     assert next_counter_clockwise_direction(Direction.EAST) == Direction.NORTHEAST
+
+
+def test_symmetric_direction() -> None:
+    assert symmetric_direction(Direction.EAST) == Direction.WEST
+    assert symmetric_direction(Direction.SOUTHEAST) == Direction.NORTHWEST
+    assert symmetric_direction(Direction.SOUTHWEST) == Direction.NORTHEAST
+    assert symmetric_direction(Direction.WEST) == Direction.EAST
+    assert symmetric_direction(Direction.NORTHWEST) == Direction.SOUTHEAST
+    assert symmetric_direction(Direction.NORTHEAST) == Direction.SOUTHWEST
+
+
+def test_symmetric_index() -> None:
+    assert symmetric_index(2, 0) == (-2, 0)
+    assert symmetric_index(1, -4) == (-1, 4)
+    assert symmetric_index(-2, 3) == (2, -3)
+    assert symmetric_index(0, 0) == (0, 0)
+
+
+def test_ordered_ring_indexes() -> None:
+    assert list(ordered_ring_indexes(Direction.EAST, 1)) == [(1, 0), (0, 1), (-1, 1), (-1, 0), (0, -1), (1, -1)]
+    ring = [(0, -2), (1, -2), (2, -2), (2, -1), (2, 0), (1, 1), (0, 2), (-1, 2), (-2, 2), (-2, 1), (-2, 0), (-1, -1)]
+    assert list(ordered_ring_indexes(Direction.NORTHWEST, 2)) == ring
+    assert list(ordered_ring_indexes(Direction.SOUTHEAST, 0)) == [(0, 0)]
+
+
+def test_spiral_ordered_indexes() -> None:
+    spiral = [(-1, 0), (0, -1), (1, -1), (1, 0), (0, 1), (-1, 1), (0, 0)]
+    assert list(spiral_ordered_indexes(Direction.WEST, 1)) == spiral
+    spiral = [
+        (-2, 2), (-2, 1), (-2, 0), (-1, -1), (0, -2), (1, -2), (2, -2), (2, -1), (2, 0), (1, 1), (0, 2), (-1, 2),
+        (-1, 1), (-1, 0), (0, -1), (1, -1), (1, 0), (0, 1),
+        (0, 0)
+    ]
+    assert list(spiral_ordered_indexes(Direction.SOUTHWEST, 2)) == spiral
+    assert list(spiral_ordered_indexes(Direction.NORTHEAST, 0)) == [(0, 0)]
+
+
+def test_neighbors() -> None:
+    assert sorted(neighbors(0, 0)) == [(-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0)]
+    assert sorted(neighbors(2, -1)) == [(1, -1), (1, 0), (2, -2), (2, 0), (3, -2), (3, -1)]
